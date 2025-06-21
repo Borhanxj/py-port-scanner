@@ -1,53 +1,45 @@
-#lib that makes us able to connect to a port
-import socket
-# lib that gives us mutex functionality
-import threading
-# lib that gives us colored output in terminal\
-from colorama import Fore, Style, init
-init(autoreset=True)
+#Borhan Javadian
 
-print_lock = threading.Lock()
+# lib that makes us able to write bash command
+import argparse
 
-def banner_grabber(target, port):
-    # This function can be used to grab the banner of the service running on the open port
-    try:
-        s = socket.socket()
-        s.settimeout(1)
-        s.connect((target, port))
-        s.send(b'HEAD / HTTP/1.0\r\n\r\n')  # Send a simple HTTP request to get the banner
-        banner = s.recv(1024).decode().strip()  # Receive up to 1024 bytes and decode it
-        s.close()
-        return banner
-    except:
-        return None
+# This library is used to run functions in parallel
+from concurrent.futures import ThreadPoolExecutor
 
-def scan_port(target, port):
-    # Create a socket object
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # socket means we are using socket library
-        # second socket means we are inititating a socket object
-        # AF_INET means we are using IPv4
-        # SOCK_STREAM means we are using TCP protocol
+# libray created by me that contains the scan_port function
+from utils import scan_port
 
-    s.settimeout(1)
-        # Set a timeout for the socket connection
+def main():
+    parser = argparse.ArgumentParser(description="Simple pyhton scanner")
 
-    result = s.connect_ex((target, port))
-        # connect_ex() method tries to connect to the target IP and port
-        # If the connection is successful, it returns 0, otherwise it returns an error code
+    # 1. Add target IP address
+    parser.add_argument("-t", "--target", required=True, help="Target IP address") # Add an argument for the target IP address - required=True makes this argument mandatory
 
-    if result == 0 : 
-        banner = banner_grabber(target, port)
-        with print_lock:
-            print(Fore.GREEN + "Port " + str(port) + " is open" + Style.RESET_ALL)
-            if banner:
-                print("\tBanner for port", port, ":")
-                for line in banner.splitlines():
-                    print("\t ", line)
-            else: 
-                print(Fore.YELLOW + "\tUnknown banner" + Style.RESET_ALL)
+    # 2. Add port range
+    parser.add_argument("-p", "--port", required= False, help="Port range ( format: 10-80 )" )
+
+    args = parser.parse_args()
+
+    #If the user does not provide a port range, we will scan all ports
+    if args.port is not None:
+        port_range = args.port
     else:
-        pass
+        port_range = "1-65535"
 
-    s.close()
-        # Close the socket connection
+    ports = port_range.split("-")
+    start_port = int(ports[0])
+    end_port = int(ports[1])
+    
+    print ("Scanning target:", args.target)
+    print ("Port range:", args.port)
+    print("Scanning ports from ", start_port, end_port)
+
+    # 3. Scan the ports - we will use ThreadPoolExecutor to scan ports in parallel
+    with ThreadPoolExecutor(max_workers=100) as executor:
+        for port in range(start_port, end_port +1):
+            executor.submit( scan_port, args.target, port )
+
+# __name__ is a special variable in Python that is set to the name of the module.
+# If the module is being run directly, __name__ will be set to "__main__"./
+if __name__ == "__main__":
+    main()
