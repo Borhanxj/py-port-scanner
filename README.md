@@ -8,7 +8,7 @@
 ### ⚙️ Phase 2 – Features
 - [ ] UDP port scanning
 - [x] Banner grabbing
-- [ ] Save output to file
+- [x] Save output to file
 
 ### ⚡ Phase 3 – Speed & Usability
 - [x] Add multithreading

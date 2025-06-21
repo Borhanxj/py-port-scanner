@@ -18,6 +18,9 @@ def main():
     # 2. Add port range
     parser.add_argument("-p", "--port", required= False, help="Port range ( format: 10-80 )" )
 
+    # 3. output the results
+    parser.add_argument("-o", "--output", required=False, help="Output file to save results")
+
     args = parser.parse_args()
 
     #If the user does not provide a port range, we will scan all ports
@@ -34,10 +37,11 @@ def main():
     print ("Port range:", args.port)
     print("Scanning ports from ", start_port, end_port)
 
-    # 3. Scan the ports - we will use ThreadPoolExecutor to scan ports in parallel
+    # 4. Scan the ports - we will use ThreadPoolExecutor to scan ports in parallel
     with ThreadPoolExecutor(max_workers=100) as executor:
         for port in range(start_port, end_port +1):
-            executor.submit( scan_port, args.target, port )
+            executor.submit(scan_port, args.target, port, args.output)
+
 
 # __name__ is a special variable in Python that is set to the name of the module.
 # If the module is being run directly, __name__ will be set to "__main__"./
