@@ -1,18 +1,18 @@
 ## 🚀 Project Roadmap
 
 ### ✅ Phase 1 – Basics
-- [ ] CLI setup with argparse
-- [ ] TCP port scanning
-- [ ] Output open ports to console
+- [x] CLI setup with argparse
+- [x] TCP port scanning
+- [x] Output open ports to console
 
 ### ⚙️ Phase 2 – Features
 - [ ] UDP port scanning
-- [ ] Banner grabbing
+- [x] Banner grabbing
 - [ ] Save output to file
 
 ### ⚡ Phase 3 – Speed & Usability
-- [ ] Add multithreading
-- [ ] Colorful output (with `colorama`)
+- [x] Add multithreading
+- [x] Colorful output (with `colorama`)
 - [ ] Use top 1000 common ports
 
 ### 🔬 Phase 4 – Advanced
