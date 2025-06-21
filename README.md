@@ -1,6 +1,6 @@
 ## 🚀 Project Roadmap
 
-### ✅ Phase 1 – Basics
+### 🧱 Phase 1 – Basics
 - [x] CLI setup with argparse
 - [x] TCP port scanning
 - [x] Output open ports to console
