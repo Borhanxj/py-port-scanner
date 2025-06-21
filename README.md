@@ -13,7 +13,7 @@
 ### ⚡ Phase 3 – Speed & Usability
 - [x] Add multithreading
 - [x] Colorful output (with `colorama`)
-- [ ] Use top 1000 common ports
+- [x] Use top common ports
 
 ### 🔬 Phase 4 – Advanced
 - [ ] Subnet scanning (CIDR support)

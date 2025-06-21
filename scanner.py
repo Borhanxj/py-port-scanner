@@ -24,14 +24,27 @@ def main():
     args = parser.parse_args()
 
     #If the user does not provide a port range, we will scan all ports
-    if args.port is not None:
-        port_range = args.port
-    else:
-        port_range = "1-65535"
+    if args.port == "common":
+        # If the user specifies "common", we will read the common ports from a file
+        with open("wordlists/common_ports.txt") as f:
+            # Read the common ports from the file and convert them to integers
+            ports_to_scan = []
+            for line in f:
+                line = line.strip()
+                if line.isdigit():
+                    ports_to_scan.append(int(line))
+        start_port = min(ports_to_scan)
+        end_port = max(ports_to_scan)
 
-    ports = port_range.split("-")
-    start_port = int(ports[0])
-    end_port = int(ports[1])
+    else:
+        if args.port:
+            ports = args.port.split("-")
+            start_port = int(ports[0])
+            end_port = int(ports[1])
+            ports_to_scan = list(range(start_port, end_port + 1))
+        else:
+            ports_to_scan = list(range(1, 65536))
+
     
     print ("Scanning target:", args.target)
     print ("Port range:", args.port)
@@ -39,7 +52,7 @@ def main():
 
     # 4. Scan the ports - we will use ThreadPoolExecutor to scan ports in parallel
     with ThreadPoolExecutor(max_workers=100) as executor:
-        for port in range(start_port, end_port +1):
+        for port in ports_to_scan:
             executor.submit(scan_port, args.target, port, args.output)
 
 
