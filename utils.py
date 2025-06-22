@@ -2,14 +2,16 @@
 import socket
 # lib that gives us mutex functionality
 import threading
-# lib that gives us colored output in terminal\
+# lib that gives us colored output in terminal
 from colorama import Fore, Style, init
+# lib that gives us the ability to send and receive packets
+from scapy.all import IP, TCP, sr1
+
 init(autoreset=True)
 
 print_lock = threading.Lock()
 
 def grab_banner(target, port):
-    # This function can be used to grab the banner of the service running on the open portdef grab_banner(target, port):
     try:
         s = socket.socket()
         s.settimeout(1)
@@ -32,19 +34,9 @@ def grab_banner(target, port):
 
 
 def scan_port(target, port, output_file=None):
-    # Create a socket object
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # socket means we are using socket library
-        # second socket means we are inititating a socket object
-        # AF_INET means we are using IPv4
-        # SOCK_STREAM means we are using TCP protocol
-
     s.settimeout(1)
-        # Set a timeout for the socket connection
-
     result = s.connect_ex((target, port))
-        # connect_ex() method tries to connect to the target IP and port
-        # If the connection is successful, it returns 0, otherwise it returns an error code
 
     if result == 0 : 
         banner = grab_banner(target, port)
@@ -74,4 +66,83 @@ def scan_port(target, port, output_file=None):
         pass
 
     s.close()
-        # Close the socket connection
+
+
+def scan_udp_port(target, port, output_file=None):
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(1)
+    
+    try:
+        s.sendto(b"", (target, port))
+        data, sender = s.recvfrom(1024)
+        with print_lock:
+            print(Fore.CYAN + "[+] UDP Port " + str(port) + " is OPEN (received response)" + Style.RESET_ALL)
+            print("\t", data.decode(errors="ignore"))
+            print("\tResponse from:", sender)
+        
+        if output_file:
+            with open(output_file, "a") as f:
+                f.write("UDP Port " + str(port) + " is OPEN (response)\n")
+                f.write("Data: " + data.decode(errors="ignore") + "\n\n")
+                f.write("Sender: " + str(sender) + "\n")
+
+    except socket.timeout:
+        with print_lock:
+            print(Fore.CYAN + "[?] UDP Port " + str(port) + " might be OPEN (no response)" + Style.RESET_ALL)
+        if output_file:
+            with open(output_file, "a") as f:
+                f.write("UDP Port " + str(port) + " might be OPEN (no response)\n\n")
+
+    except:
+        pass
+    
+    s.close()
+
+
+def guess_os(ip):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(1)
+        s.connect((ip, 80))
+        ttl = s.getsockopt(socket.IPPROTO_IP, socket.IP_TTL)
+        s.close()
+
+        if ttl <= 64:
+            return "Linux/Unix"
+        elif ttl <= 128:
+            return "Windows"
+        else:
+            return "Networking Device or Cisco"
+    except:
+        return "Unknown"
+
+
+def syn_scan(ip, port, output_file=None):
+    pkt = IP(dst=ip)/TCP(dport=port, flags="S")
+    resp = sr1(pkt, timeout=1, verbose=0)
+
+    with print_lock:
+        if resp is None:
+            print(Fore.MAGENTA + "[?] SYN Port " + str(port) + " → No response (filtered or silent)" + Style.RESET_ALL)
+            result = "Filtered or no response"
+        elif resp.haslayer(TCP):
+            if resp[TCP].flags == 0x12:
+                print(Fore.MAGENTA + "[+] SYN Port " + str(port) + " is OPEN" + Style.RESET_ALL)
+                result = "OPEN"
+            elif resp[TCP].flags == 0x14:
+                print(Fore.MAGENTA + "[-] SYN Port " + str(port) + " is CLOSED" + Style.RESET_ALL)
+                result = "CLOSED"
+            else:
+                print(Fore.MAGENTA + "[?] SYN Port " + str(port) + " → Unknown TCP flags" + Style.RESET_ALL)
+                result = "UNKNOWN"
+        else:
+            print(Fore.MAGENTA + "[?] SYN Port " + str(port) + " → Non-TCP response" + Style.RESET_ALL)
+            result = "UNKNOWN"
+
+    if output_file:
+        try:
+            with open(output_file, "a") as f:
+                f.write("SYN Port " + str(port) + ": " + result + "\n")
+        except:
+            pass
+

@@ -6,7 +6,7 @@
 - [x] Output open ports to console
 
 ### ⚙️ Phase 2 – Features
-- [ ] UDP port scanning
+- [x] UDP port scanning
 - [x] Banner grabbing
 - [x] Save output to file
 
@@ -16,10 +16,10 @@
 - [x] Use top common ports
 
 ### 🔬 Phase 4 – Advanced
-- [ ] Subnet scanning (CIDR support)
-- [ ] Basic OS fingerprinting
+- [x] Subnet scanning (CIDR support)
+- [x] Basic OS fingerprinting
 - [ ] Web GUI (Flask)
 
 ### 🛡️ Phase 5 – Security Exploration
-- [ ] Add stealth scan mode (SYN scan)
-- [ ] Detect firewall or filtered ports
+- [x] Add stealth scan mode (SYN scan)
+- [x] Detect firewall or filtered ports
