@@ -18,7 +18,7 @@
 ### 🔬 Phase 4 – Advanced
 - [x] Subnet scanning (CIDR support)
 - [x] Basic OS fingerprinting
-- [ ] Web GUI (Flask)
+- [x] Web GUI (Flask)
 
 ### 🛡️ Phase 5 – Security Exploration
 - [x] Add stealth scan mode (SYN scan)
