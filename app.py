@@ -14,46 +14,57 @@ def home():
     results = []
     target = ""
     port_list = []
+    os_line = ""
 
     if request.method == "POST":
-        target = request.form.get("target")
-        ports = request.form.get("ports")
+        target = request.form.get("target", "").strip()
+        ports = request.form.get("ports", "").strip()
         scan_type = request.form.get("scan_type")
         use_top_ports = request.form.get("common_ports") == "yes"
 
-        # --- Port Parsing ---
-        if use_top_ports:
-            try:
-                with open("wordlists/common_ports.txt") as f:
-                    port_list = [int(line.strip()) for line in f if line.strip().isdigit()]
-            except:
-                error_msg = "⚠️ Failed to load common ports list."
+        # Validate target
+        if not target:
+            error_msg = "❌ Please enter a target IP or CIDR."
+            ip_list = []
         else:
             try:
-                if "-" in ports:
-                    start, end = ports.split("-")
-                    port_list = list(range(int(start), int(end) + 1))
+                if '/' in target:
+                    net = ipaddress.IPv4Network(target, strict=False)
+                    ip_list = [str(ip) for ip in net.hosts()]
                 else:
-                    port_list = [int(ports)]
-            except:
-                error_msg = "❌ Invalid port or port range."
+                    ipaddress.IPv4Address(target)
+                    ip_list = [target]
+            except ValueError:
+                error_msg = "❌ Invalid IP or CIDR range."
+                ip_list = []
 
-        # --- Target Parsing ---
-        ip_list = []
-        try:
-            if '/' in target:
-                net = ipaddress.IPv4Network(target, strict=False)
-                ip_list = [str(ip) for ip in net.hosts()]
+        # Validate ports only if no target error
+        if not error_msg:
+            if use_top_ports:
+                try:
+                    with open("wordlists/common_ports.txt") as f:
+                        port_list = [int(line.strip()) for line in f if line.strip().isdigit()]
+                except:
+                    error_msg = "⚠️ Failed to load common ports list."
             else:
-                ipaddress.IPv4Address(target)
-                ip_list = [target]
-        except ValueError:
-            error_msg = "❌ Invalid IP or CIDR range."
+                if not ports:
+                    error_msg = "❌ Please enter ports or select common ports."
+                else:
+                    try:
+                        if "-" in ports:
+                            start, end = ports.split("-")
+                            port_list = list(range(int(start), int(end) + 1))
+                        else:
+                            port_list = [int(ports)]
+                    except:
+                        error_msg = "❌ Invalid port or port range."
 
-        if not error_msg and len(ip_list) * len(port_list) > 100:
-            error_msg = "⚠️ Too many scan targets. Reduce number of IPs or ports."
+        # Safety limit to avoid huge scans
+        if not error_msg:
+            if len(ip_list) * len(port_list) > 100:
+                error_msg = "⚠️ Too many scan targets. Reduce IPs or ports."
 
-        # --- Run Scan if No Error ---
+        # Run scan if no errors
         if not error_msg:
             def capture_scan(ip, port):
                 if scan_type == "stealth":
@@ -83,7 +94,7 @@ def home():
                 for r in results:
                     f.write(r.replace("<br>", "\n") + "\n")
 
-            # OS Guess
+            # OS guess
             try:
                 ttl = get_ttl(ip_list[0])
                 if ttl:
@@ -101,7 +112,7 @@ def home():
         else:
             os_line = ""
 
-        # --- Generate HTML Response ---
+        # Generate the HTML response
         html = f'''
         <html>
         <head>
@@ -188,6 +199,7 @@ def home():
         html += '</body></html>'
         return Markup(html)
 
+    # GET request returns main form
     return '''
         <html>
         <head>
